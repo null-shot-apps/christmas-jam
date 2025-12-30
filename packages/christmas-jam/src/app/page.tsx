@@ -1,84 +1,103 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-const slogans = [
-  "Turn chats into apps",
-  "Prompt. Ship. Repeat.",
-  "Build anything from a chat",
-  "Ideas → Apps, instantly",
-  "From zero to MVP in minutes",
-  "Your cofounder in the command line",
-  "Draft, iterate, deploy",
-  "Ship faster than you can type",
-  "Design in text, deliver in code",
-  "Dream it. Prompt it. Run it.",
-  "Chat-native app building",
-  "From prompt to product",
-  "One prompt, infinite apps",
-  "Stop scaffolding. Start shipping.",
-  "Prototype at the speed of thought",
-  "Make conversations executable"
-];
+type Player = 'X' | 'O';
+type Board = (Player | null)[];
 
-export default function Landing() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+export default function TicTacToe() {
+  const [board, setBoard] = useState<Board>(Array(9).fill(null));
+  const [currentPlayer, setCurrentPlayer] = useState<Player>('X');
+  const [winner, setWinner] = useState<Player | 'Draw' | null>(null);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsVisible(false);
-      setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % slogans.length);
-        setIsVisible(true);
-      }, 400);
-    }, 2800);
+  const winningCombinations = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+    [0, 4, 8], [2, 4, 6] // diagonals
+  ];
 
-    return () => clearInterval(interval);
-  }, []);
+  const checkWinner = (newBoard: Board): Player | 'Draw' | null => {
+    for (const combo of winningCombinations) {
+      const [a, b, c] = combo;
+      if (newBoard[a] && newBoard[a] === newBoard[b] && newBoard[a] === newBoard[c]) {
+        return newBoard[a];
+      }
+    }
+    if (newBoard.every(cell => cell !== null)) {
+      return 'Draw';
+    }
+    return null;
+  };
+
+  const handleClick = (index: number) => {
+    if (board[index] || winner) return;
+
+    const newBoard = [...board];
+    newBoard[index] = currentPlayer;
+    setBoard(newBoard);
+
+    const gameWinner = checkWinner(newBoard);
+    if (gameWinner) {
+      setWinner(gameWinner);
+    } else {
+      setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+    }
+  };
+
+  const resetGame = () => {
+    setBoard(Array(9).fill(null));
+    setCurrentPlayer('X');
+    setWinner(null);
+  };
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-black text-white">
-      {/* Enhanced animated aurora background layers */}
-      <div className="absolute inset-0 bg-aurora-layer-1" />
-      <div className="absolute inset-0 bg-aurora-layer-2" />
-      <div className="absolute inset-0 bg-aurora-layer-3" />
-      
-      {/* Floating particles overlay */}
-      <div className="absolute inset-0 bg-particles" />
-      
-      {/* Main content - centered */}
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
       <main className="relative z-10 h-full flex flex-col items-center justify-center px-6">
-        <h1 className="text-center text-[clamp(28px,6vw,64px)] font-medium tracking-tight mb-4">
-          Turn Chats into Apps
+        <h1 className="text-5xl md:text-6xl font-bold mb-8 text-center">
+          Tic Tac Toe
         </h1>
-        
-        {/* Rotating slogans */}
-        <div className="mt-4 h-8 md:h-10 overflow-hidden flex items-center justify-center">
-          <span
-            className={`inline-block text-center text-[clamp(18px,3vw,32px)] font-light transition-all duration-[400ms] ease-in-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-            }`}
-          >
-            {slogans[currentIndex]}
-          </span>
+
+        {/* Game status */}
+        <div className="mb-6 text-2xl font-semibold text-center">
+          {winner ? (
+            winner === 'Draw' ? (
+              <span className="text-yellow-300">It&apos;s a Draw!</span>
+            ) : (
+              <span className="text-green-300">Player {winner} Wins! 🎉</span>
+            )
+          ) : (
+            <span>Player {currentPlayer}&apos;s Turn</span>
+          )}
         </div>
+
+        {/* Game board */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          {board.map((cell, index) => (
+            <button
+              key={index}
+              onClick={() => handleClick(index)}
+              className={`w-20 h-20 md:w-24 md:h-24 bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-lg
+                flex items-center justify-center text-4xl md:text-5xl font-bold
+                transition-all duration-200 hover:bg-white/20 hover:scale-105
+                ${cell ? 'cursor-default' : 'cursor-pointer'}
+                ${cell === 'X' ? 'text-blue-300' : 'text-pink-300'}`}
+              disabled={!!cell || !!winner}
+            >
+              {cell}
+            </button>
+          ))}
+        </div>
+
+        {/* Reset button */}
+        <button
+          onClick={resetGame}
+          className="px-8 py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-full
+            text-lg font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
+        >
+          New Game
+        </button>
       </main>
-      
-      {/* Start Prompting arrow pointing left - bottom left */}
-      <div className="absolute left-6 md:left-8 bottom-[5%] z-20 flex items-center gap-3 arrow-point-left">
-        <div className="flex items-center gap-2 text-white/80 font-medium text-sm md:text-base">
-          <svg 
-            className="w-5 h-5 md:w-6 md:h-6 animate-bounce-horizontal" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span>Start prompting</span>
-        </div>
-      </div>
     </div>
   );
 }
+
